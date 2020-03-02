@@ -170,10 +170,8 @@ describe("curried producer", () => {
 				state?: S | undefined,
 				...rest: number[]
 			) => S
-			let bar = produce(
-				(state: Draft<State>, ...args: number[]) => {},
-				_ as State
-			)
+			let bar = produce((state: Draft<State>, ...args: number[]) => {},
+			_ as State)
 			assert(bar, _ as Recipe)
 			bar(_ as State, 1, 2)
 			bar(_ as State)
@@ -208,13 +206,34 @@ describe("curried producer", () => {
 		// With initial state:
 		{
 			let bar = produce(() => {}, [] as ReadonlyArray<string>)
-			assert(bar, _ as <S extends readonly string[]>(
-				state?: S | undefined
-			) => S)
+			assert(
+				bar,
+				_ as <S extends readonly string[]>(state?: S | undefined) => S
+			)
 			bar([] as ReadonlyArray<string>)
 			bar(undefined)
 			bar()
 		}
+	})
+
+	it("infers type", () => {
+		type State = {a: boolean}
+
+		function applyRecipe(state: State, recipe: (state: State) => State) {
+			return recipe(state)
+		}
+
+		const state: State = {a: true}
+
+		assert(
+			applyRecipe(
+				state,
+				produce(state => {
+					state.a = "b" // Should be type error
+				})
+			),
+			_ as State
+		)
 	})
 })
 
