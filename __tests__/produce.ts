@@ -5,8 +5,11 @@ import produce, {
 	Patch,
 	nothing,
 	Draft,
-	Immutable
-} from "../src/"
+	Immutable,
+	enableAllPlugins
+} from "../src/immer"
+
+enableAllPlugins()
 
 interface State {
 	readonly num: number
@@ -481,4 +484,15 @@ it("works with ReadonlyMap and ReadonlySet", () => {
 		assert(draft, _ as Set<{x: number}>)
 	})
 	assert(res2, _ as ReadonlySet<{readonly x: number}>)
+})
+
+it("shows error in production if called incorrectly", () => {
+	expect(() => {
+		debugger
+		produce(null as any)
+	}).toThrow(
+		(global as any).USES_BUILD
+			? "[Immer] minified error nr: 6"
+			: "[Immer] The first or second argument to `produce` must be a function"
+	)
 })
