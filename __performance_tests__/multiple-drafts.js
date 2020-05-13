@@ -45,3 +45,23 @@ measure("immer (proxy) - with autofreeze * " + MAX, () => {
 			draft.data2.add(1)
 		})
 })
+
+measure("immer (es5) - without autofreeze * " + MAX, () => {
+	setUseProxies(false)
+	setAutoFreeze(false)
+	for (let i = 0; i < MAX; i++)
+		produce(baseState, draft => {
+			draft.data = dataSet
+			draft.data2.add(1)
+		})
+})
+
+measure("immer (es5) - with autofreeze * " + MAX, () => {
+	setUseProxies(false)
+	setAutoFreeze(true)
+	for (let i = 0; i < MAX; i++)
+		produce(frozenBazeState, draft => {
+			draft.data = dataSet
+			draft.data2.add(1)
+		})
+})
