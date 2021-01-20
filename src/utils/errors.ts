@@ -32,7 +32,8 @@ const errors = {
 	19(plugin: string) {
 		return "plugin not loaded: " + plugin
 	},
-	20: "Cannot use proxies if Proxy, Proxy.revocable or Reflect are not available"
+	20: "Cannot use proxies if Proxy, Proxy.revocable or Reflect are not available",
+	24: "Patching reserved attributes like __proto__, prototype and constructor is not allowed"
 } as const
 
 export function die(error: keyof typeof errors, ...args: any[]): never {

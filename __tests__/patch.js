@@ -11,6 +11,8 @@ enableAllPlugins()
 
 jest.setTimeout(1000)
 
+const isProd = process.env.NODE_ENV === "production"
+
 function runPatchTest(base, producer, patches, inversePathes) {
 	let resultProxies, resultEs5
 
@@ -1047,4 +1049,111 @@ test("#559 patches works in a nested reducer with proxies", () => {
 	const reversedSubState = applyPatches(newState.sub, inverseChanges)
 
 	expect(reversedSubState).toMatchObject(state.sub)
+})
+
+test("do not allow __proto__ polution - 738", () => {
+	const obj = {}
+
+	// @ts-ignore
+	expect(obj.polluted).toBe(undefined)
+	expect(() => {
+		applyPatches({}, [
+			{op: "add", path: ["__proto__", "polluted"], value: "yes"}
+		])
+	}).toThrow(
+		isProd
+			? "24"
+			: "Patching reserved attributes like __proto__, prototype and constructor is not allowed"
+	)
+	// @ts-ignore
+	expect(obj.polluted).toBe(undefined)
+})
+
+test("do not allow __proto__ polution using arrays - 738", () => {
+	const obj = {}
+	const ar = []
+
+	// @ts-ignore
+	expect(obj.polluted).toBe(undefined)
+	// @ts-ignore
+	expect(ar.polluted).toBe(undefined)
+	expect(() => {
+		applyPatches(
+			[],
+			[{op: "add", path: ["__proto__", "polluted"], value: "yes"}]
+		)
+	}).toThrow(
+		isProd
+			? "24"
+			: "Patching reserved attributes like __proto__, prototype and constructor is not allowed"
+	)
+	// @ts-ignore
+	expect(obj.polluted).toBe(undefined)
+	// @ts-ignore
+	expect(ar.polluted).toBe(undefined)
+})
+
+test("do not allow prototype polution - 738", () => {
+	const obj = {}
+
+	// @ts-ignore
+	expect(obj.polluted).toBe(undefined)
+	expect(() => {
+		applyPatches(Object, [
+			{op: "add", path: ["prototype", "polluted"], value: "yes"}
+		])
+	}).toThrow(
+		isProd
+			? "24"
+			: "Patching reserved attributes like __proto__, prototype and constructor is not allowed"
+	)
+	// @ts-ignore
+	expect(obj.polluted).toBe(undefined)
+})
+
+test("do not allow constructor polution - 738", () => {
+	const obj = {}
+
+	// @ts-ignore
+	expect(obj.polluted).toBe(undefined)
+	const t = {}
+	applyPatches(t, [{op: "replace", path: ["constructor"], value: "yes"}])
+	expect(typeof t.constructor).toBe("function")
+	// @ts-ignore
+	expect(Object.polluted).toBe(undefined)
+})
+
+test("do not allow constructor.prototype polution - 738", () => {
+	const obj = {}
+
+	// @ts-ignore
+	expect(obj.polluted).toBe(undefined)
+	expect(() => {
+		applyPatches({}, [
+			{op: "add", path: ["constructor", "prototype", "polluted"], value: "yes"}
+		])
+	}).toThrow(
+		isProd
+			? "24"
+			: "Patching reserved attributes like __proto__, prototype and constructor is not allowed"
+	)
+	// @ts-ignore
+	expect(Object.polluted).toBe(undefined)
+})
+
+test("maps can store __proto__, prototype and constructor props", () => {
+	const obj = {}
+	const map = new Map()
+	map.set("__proto__", {})
+	map.set("constructor", {})
+	map.set("prototype", {})
+	const newMap = applyPatches(map, [
+		{op: "add", path: ["__proto__", "polluted"], value: "yes"},
+		{op: "add", path: ["constructor", "polluted"], value: "yes"},
+		{op: "add", path: ["prototype", "polluted"], value: "yes"}
+	])
+	expect(newMap.get("__proto__").polluted).toBe("yes")
+	expect(newMap.get("constructor").polluted).toBe("yes")
+	expect(newMap.get("prototype").polluted).toBe("yes")
+	expect(obj.polluted).toBe(undefined)
 })
